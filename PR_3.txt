@@ -1,0 +1,103 @@
+section .data
+	nline 	db	10,10
+	nline_len	equ	$-nline
+    
+	ano	db	10,"Assignment No.: 3",10
+		db	10,"Positive/Negative elements from 64-bit array",10
+	ano_len	equ	$-ano
+    
+	arr64	dq	21H, 5FH, -33H, -21H, -62H
+	n	equ	5 	;variable which stores number of elements in array
+
+	pmsg	db	10,10,"The number of positive elements from 64-bit array: "
+	pmsg_len equ	$-pmsg
+
+	nmsg	db	10,10,"The number of negative elements from 64-bit array: "
+	nmsg_len equ	$-nmsg
+    
+section .bss
+
+	p_count	resq	1	
+	n_count	resq	1
+	char_ans resb	2
+    
+%macro print 2
+	MOV RAX, 1
+	MOV RDI, 1
+	MOV RSI, %1
+	MOV RDX, %2
+	syscall
+%endmacro
+
+%macro exit 0
+	MOV RAX,60
+	MOV RDI, 0
+	syscall
+%endmacro
+
+section .text
+
+	global	_start
+	_start:
+    
+		print	ano, ano_len
+		MOV RSI,arr64
+		MOV RCX,n	;n is the counter for 5 numbers
+		MOV RBX, 0	;counter for positive numbers
+		MOV RDX, 0	;counter for negative numbers
+	
+	next_num:
+		MOV RAX, [RSI]	;take number in RAX
+		ROL RAX, 1	;rotate left 1 bit to check for sign bit in the CF
+		JC negative
+	
+	positive: 
+		INC RBX
+		JMP next
+	
+	negative: 
+		INC RDX
+	
+	next:
+		ADD RSI,8
+		DEC RCX
+		JNZ next_num
+	
+		MOV	[p_count], RBX	;store positive number count
+		MOV	[n_count], RDX	;store negative number count
+		
+		print pmsg, pmsg_len
+		MOV RAX, [p_count]	;load value of p_count in RAX
+		call disp64_proc
+		
+		print nmsg, nmsg_len
+		MOV RAX, [n_count]
+		call disp64_proc
+	
+		print nline, nline_len
+exit
+
+disp64_proc:
+	MOV RBX, 16	;divisor=16 for hex
+	MOV RCX, 2	;Number of digits
+	MOV RSI, char_ans+1	;load last byte address of char_ans
+	
+cnt:
+	MOV RDX, 0	;make RDX=0 (As in division condition)
+	DIV RBX
+	
+	CMP DL, 09H
+	JBE add30
+	ADD DL, 07H
+	
+add30:
+	ADD DL, 30H
+	MOV [RSI], DL
+	DEC RSI
+	DEC RCX
+	JNZ cnt
+	print char_ans, 2
+	
+ret
+
+

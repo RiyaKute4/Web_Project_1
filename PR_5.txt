@@ -1,0 +1,96 @@
+section .data
+
+ano db 10,"Assignment No. 5",10
+ano_len equ $-ano
+
+bmsg db 10,"Enter 5 Digit BCD Number :"
+bmsg_len equ $-bmsg
+
+hmsg db 10,"Equivalent Hex Number    :"
+hmsg_len equ $-hmsg
+
+emsg db 10,"Invalid Input Number !! ",10
+emsg_len equ $-emsg
+
+
+section .bss
+
+buf resb 6
+char_ans resb 4
+ans resw 1
+
+%macro Print 2
+    Mov rax,1
+    Mov rdi,1
+    Mov rsi,%1
+    Mov rdx,%2
+    syscall
+%endmacro
+
+%macro Read 2
+    Mov rax,0
+    Mov rdi,0
+    Mov rsi,%1
+    Mov rdx,%2
+    syscall
+%endmacro
+
+%macro Exit 0
+    Mov rax,60
+    Mov rdi,60
+    syscall
+%endmacro
+
+
+section .text
+
+global _start
+_start:
+
+Print ano,ano_len
+call BCD_HEX
+Exit 
+
+BCD_HEX:
+    Print bmsg,bmsg_len
+    Read buf,6
+    Mov rsi,buf
+    xor ax,ax
+    Mov rbp,5
+    Mov rbx,10
+    
+next:
+    xor cx,cx
+    mul bx
+    Mov cl,[rsi]
+    sub cl,30h
+    add ax,cx
+    inc rsi
+    dec rbp
+    jnz next
+    mov [ans],ax
+    Print hmsg,hmsg_len
+    Mov ax,[ans]
+    call Disp_16
+    ret
+    
+Disp_16:
+    Mov rsi,char_ans+3
+    Mov rcx,4
+    Mov rbx,16
+    
+next_digit:
+    xor rdx,rdx
+    div rbx
+    cmp dl,9
+    jbe add30
+    add dl,07H
+    
+add30:
+    add dl,30H
+    Mov [rsi],dl
+    dec rsi
+    dec rcx
+    jnz next_digit
+    Print char_ans,4
+    ret
